@@ -1,0 +1,12 @@
+touch data/bronze/.gitkeep
+touch data/silver/.gitkeep
+touch data/gold/.gitkeep
+
+touch tests/.gitkeep
+touch config/.gitkeep
+
+touch src/ingestion/.gitkeep
+touch src/transformations/.gitkeep
+touch src/quality/.gitkeep
+
+touch .github/workflows/.gitkeep
