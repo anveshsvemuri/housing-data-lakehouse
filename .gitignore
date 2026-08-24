@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+
+# Local data and Spark artifacts
+data/*
+!data/**/.gitkeep
+.sparkStaging/
+metastore_db/
+derby.log
+*.parquet
+*.crc
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
