@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from housing_lakehouse.ingestion import generate_housing_records, write_jsonl
+from housing_lakehouse.pipeline import create_spark_session, run_medallion_pipeline
 from housing_lakehouse.quality import validate_housing_records
 from housing_lakehouse.settings import PipelineSettings
 
@@ -20,6 +21,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rows", type=int, default=100, help="number of synthetic rows")
     parser.add_argument("--seed", type=int, default=42, help="deterministic random seed")
     parser.add_argument("--data-root", type=Path, default=Path("data"))
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="also build Silver and Gold Parquet layers with Spark",
+    )
     return parser
 
 
@@ -42,4 +48,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     run_pipeline(rows=args.rows, seed=args.seed, data_root=args.data_root)
+    if args.full:
+        settings = PipelineSettings(data_root=args.data_root)
+        spark = create_spark_session(settings.app_name)
+        try:
+            summary = run_medallion_pipeline(
+                spark,
+                bronze_path=settings.bronze_path,
+                silver_path=settings.silver_path,
+                gold_path=settings.gold_path,
+            )
+            LOGGER.info(
+                "pipeline complete: bronze=%s silver=%s gold=%s",
+                summary.bronze_rows,
+                summary.silver_rows,
+                summary.gold_rows,
+            )
+        finally:
+            spark.stop()
     return 0
