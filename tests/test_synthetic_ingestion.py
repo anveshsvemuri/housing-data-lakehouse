@@ -3,11 +3,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from housing_lakehouse.ingestion.synthetic import (
-    generate_housing_records,
-    write_jsonl,
-)
-
+from housing_lakehouse.ingestion.synthetic import generate_housing_records, write_jsonl
 
 FIXED_TIME = datetime(2026, 1, 15, 12, tzinfo=UTC)
 
