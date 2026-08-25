@@ -40,7 +40,7 @@ def build_silver(bronze: DataFrame) -> DataFrame:
         F.to_date("sale_date").alias("sale_date"),
         F.initcap(F.trim("city")).alias("city"),
         F.upper(F.trim("state")).alias("state"),
-        F.regexp_replace(F.lower(F.trim("property_type")), r"[s-]+", "_").alias("property_type"),
+        F.regexp_replace(F.lower(F.trim("property_type")), r"[- ]+", "_").alias("property_type"),
         F.col("bedrooms").cast("int").alias("bedrooms"),
         F.col("bathrooms").cast("double").alias("bathrooms"),
         F.col("square_feet").cast("int").alias("square_feet"),
