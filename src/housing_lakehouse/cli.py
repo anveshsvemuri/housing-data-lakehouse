@@ -58,6 +58,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 silver_path=settings.silver_path,
                 gold_path=settings.gold_path,
                 rejected_path=settings.rejected_path,
+                audit_path=settings.audit_path,
             )
             LOGGER.info(
                 "pipeline complete: bronze=%s silver=%s gold=%s rejected=%s",
@@ -66,6 +67,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 summary.gold_rows,
                 summary.rejected_rows,
             )
+            LOGGER.info("run_id=%s audit=%s", summary.run_id, summary.audit_file)
         finally:
             spark.stop()
     return 0
