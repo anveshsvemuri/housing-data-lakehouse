@@ -2,7 +2,15 @@ import json
 from datetime import UTC, datetime
 
 from housing_lakehouse.ingestion import generate_housing_records, write_jsonl
-from housing_lakehouse.pipeline import run_medallion_pipeline
+from housing_lakehouse.pipeline import create_spark_session, run_medallion_pipeline
+
+
+def test_local_spark_session_uses_portable_loopback_binding(spark):
+    session = create_spark_session("housing-lakehouse-test-session")
+
+    assert session.conf.get("spark.driver.host") == "127.0.0.1"
+    assert session.conf.get("spark.driver.bindAddress") == "127.0.0.1"
+    assert session.conf.get("spark.ui.enabled") == "false"
 
 
 def test_run_medallion_pipeline_writes_queryable_layers(spark, tmp_path):

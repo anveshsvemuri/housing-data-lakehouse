@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,9 +34,13 @@ class PipelineRunSummary:
 
 def create_spark_session(app_name: str = "housing-data-lakehouse") -> SparkSession:
     """Create a small local Spark session suitable for development."""
+    os.environ.setdefault("SPARK_LOCAL_IP", "127.0.0.1")
     return (
         SparkSession.builder.master("local[*]")
         .appName(app_name)
+        .config("spark.driver.host", "127.0.0.1")
+        .config("spark.driver.bindAddress", "127.0.0.1")
+        .config("spark.ui.enabled", "false")
         .config("spark.sql.session.timeZone", "UTC")
         .config("spark.sql.shuffle.partitions", "4")
         .getOrCreate()
