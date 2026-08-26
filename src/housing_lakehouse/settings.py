@@ -23,7 +23,21 @@ class PipelineSettings:
     def gold_path(self) -> Path:
         return self.data_root / "gold"
 
+    @property
+    def rejected_path(self) -> Path:
+        return self.data_root / "rejected"
+
+    @property
+    def audit_path(self) -> Path:
+        return self.data_root / "audit"
+
     def create_data_directories(self) -> None:
         """Create medallion-layer directories when they do not exist."""
-        for path in (self.bronze_path, self.silver_path, self.gold_path):
+        for path in (
+            self.bronze_path,
+            self.silver_path,
+            self.gold_path,
+            self.rejected_path,
+            self.audit_path,
+        ):
             path.mkdir(parents=True, exist_ok=True)

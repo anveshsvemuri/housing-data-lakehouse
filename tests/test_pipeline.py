@@ -25,5 +25,7 @@ def test_run_medallion_pipeline_writes_queryable_layers(spark, tmp_path):
     assert summary.bronze_rows == 12
     assert summary.silver_rows == 12
     assert summary.gold_rows > 0
+    assert summary.rejected_rows == 0
     assert spark.read.parquet(str(silver_path)).count() == 12
     assert spark.read.parquet(str(gold_path)).count() == summary.gold_rows
+    assert spark.read.parquet(str(summary.rejected_path)).count() == 0

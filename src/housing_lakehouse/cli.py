@@ -57,12 +57,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 bronze_path=settings.bronze_path,
                 silver_path=settings.silver_path,
                 gold_path=settings.gold_path,
+                rejected_path=settings.rejected_path,
             )
             LOGGER.info(
-                "pipeline complete: bronze=%s silver=%s gold=%s",
+                "pipeline complete: bronze=%s silver=%s gold=%s rejected=%s",
                 summary.bronze_rows,
                 summary.silver_rows,
                 summary.gold_rows,
+                summary.rejected_rows,
             )
         finally:
             spark.stop()
