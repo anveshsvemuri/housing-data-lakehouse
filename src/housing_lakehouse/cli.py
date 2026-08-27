@@ -26,6 +26,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="also build Silver and Gold Parquet layers with Spark",
     )
+    parser.add_argument(
+        "--incremental",
+        action="store_true",
+        help="process only new Bronze snapshots and merge them into Silver",
+    )
     return parser
 
 
@@ -48,7 +53,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     run_pipeline(rows=args.rows, seed=args.seed, data_root=args.data_root)
-    if args.full:
+    if args.full or args.incremental:
         settings = PipelineSettings(data_root=args.data_root)
         spark = create_spark_session(settings.app_name)
         try:
@@ -59,6 +64,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 gold_path=settings.gold_path,
                 rejected_path=settings.rejected_path,
                 audit_path=settings.audit_path,
+                incremental=args.incremental,
             )
             LOGGER.info(
                 "pipeline complete: bronze=%s silver=%s gold=%s rejected=%s",
@@ -68,6 +74,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 summary.rejected_rows,
             )
             LOGGER.info("run_id=%s audit=%s", summary.run_id, summary.audit_file)
+            if summary.skipped:
+                LOGGER.info("no new Bronze snapshots; materialized layers were unchanged")
         finally:
             spark.stop()
     return 0

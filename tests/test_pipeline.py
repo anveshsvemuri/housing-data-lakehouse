@@ -63,4 +63,69 @@ def test_repeated_input_reuses_run_identity_and_manifest(spark, tmp_path):
 
     assert first.run_id == second.run_id
     assert first.audit_file == second.audit_file
-    assert len(list((tmp_path / "audit").glob("*.json"))) == 1
+    manifests = [
+        path for path in (tmp_path / "audit").glob("*.json") if path.name != "processing-state.json"
+    ]
+    assert len(manifests) == 1
+
+
+def test_incremental_run_merges_only_new_snapshots_and_then_skips(spark, tmp_path):
+    bronze_path = tmp_path / "bronze"
+    first_records = generate_housing_records(
+        4,
+        seed=9,
+        generated_at=datetime(2026, 1, 15, tzinfo=UTC),
+    )
+    write_jsonl(first_records, bronze_path / "first.jsonl")
+    arguments = {
+        "bronze_path": bronze_path,
+        "silver_path": tmp_path / "silver",
+        "gold_path": tmp_path / "gold",
+    }
+    run_medallion_pipeline(spark, **arguments)
+
+    newer_records = generate_housing_records(
+        2,
+        seed=9,
+        generated_at=datetime(2026, 1, 16, tzinfo=UTC),
+    )
+    write_jsonl(newer_records, bronze_path / "second.jsonl")
+    incremental = run_medallion_pipeline(spark, incremental=True, **arguments)
+    unchanged = run_medallion_pipeline(spark, incremental=True, **arguments)
+
+    assert incremental.processed_files == 1
+    assert incremental.processed_bronze_rows == 2
+    assert incremental.bronze_rows == 6
+    assert incremental.silver_rows == 4
+    assert incremental.rejected_rows == 2
+    assert incremental.skipped is False
+    assert unchanged.skipped is True
+    assert unchanged.processed_files == 0
+    assert unchanged.run_id == incremental.run_id
+    assert spark.read.parquet(str(tmp_path / "silver")).count() == 4
+    assert spark.read.parquet(str(tmp_path / "rejected")).count() == 2
+
+
+def test_incremental_run_rejects_mutated_bronze_snapshot(spark, tmp_path):
+    bronze_path = tmp_path / "bronze"
+    source = bronze_path / "housing.jsonl"
+    records = generate_housing_records(
+        2,
+        seed=9,
+        generated_at=datetime(2026, 1, 15, tzinfo=UTC),
+    )
+    write_jsonl(records, source)
+    arguments = {
+        "bronze_path": bronze_path,
+        "silver_path": tmp_path / "silver",
+        "gold_path": tmp_path / "gold",
+    }
+    run_medallion_pipeline(spark, **arguments)
+    source.write_text(source.read_text().replace('"sale_price":', '"sale_price": 1, "old_price":'))
+
+    try:
+        run_medallion_pipeline(spark, incremental=True, **arguments)
+    except ValueError as error:
+        assert "immutable Bronze inputs changed" in str(error)
+    else:
+        raise AssertionError("mutated Bronze input was accepted")

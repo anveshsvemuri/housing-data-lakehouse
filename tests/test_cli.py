@@ -1,6 +1,6 @@
 import json
 
-from housing_lakehouse.cli import main, run_pipeline
+from housing_lakehouse.cli import build_parser, main, run_pipeline
 
 
 def test_run_pipeline_writes_valid_bronze_snapshot(tmp_path):
@@ -15,3 +15,9 @@ def test_run_pipeline_writes_valid_bronze_snapshot(tmp_path):
 def test_main_accepts_command_line_arguments(tmp_path):
     assert main(["--rows", "2", "--seed", "5", "--data-root", str(tmp_path)]) == 0
     assert len(list((tmp_path / "bronze").glob("housing_*.jsonl"))) == 1
+
+
+def test_incremental_flag_is_available():
+    args = build_parser().parse_args(["--incremental"])
+
+    assert args.incremental is True
