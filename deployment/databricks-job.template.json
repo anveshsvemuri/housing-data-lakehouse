@@ -1,0 +1,31 @@
+{
+  "name": "housing-data-lakehouse",
+  "max_concurrent_runs": 1,
+  "timeout_seconds": 3600,
+  "tasks": [
+    {
+      "task_key": "incremental_housing_pipeline",
+      "existing_cluster_id": "<DATABRICKS_CLUSTER_ID>",
+      "max_retries": 2,
+      "min_retry_interval_millis": 60000,
+      "python_wheel_task": {
+        "package_name": "housing-data-lakehouse",
+        "entry_point": "housing-lakehouse",
+        "parameters": [
+          "--rows",
+          "1000",
+          "--seed",
+          "42",
+          "--data-root",
+          "/Volumes/<CATALOG>/<SCHEMA>/<VOLUME>/housing-data-lakehouse",
+          "--incremental"
+        ]
+      },
+      "libraries": [
+        {
+          "whl": "dbfs:/FileStore/wheels/housing_data_lakehouse-0.1.0-py3-none-any.whl"
+        }
+      ]
+    }
+  ]
+}

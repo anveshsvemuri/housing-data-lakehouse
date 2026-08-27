@@ -12,9 +12,10 @@ Bronze JSONL snapshots
         |
         v
 Silver partitioned Parquet  -- typed, normalized, deduplicated, validated
-        |
+        |                         +--> Rejected Parquet -- reasons + superseded rows
         v
 Gold partitioned Parquet    -- annual city and state market KPIs
+                                  + Audit JSON + processing checkpoint
 ```
 
 See [docs/architecture.md](docs/architecture.md) for layer contracts and processing details.
@@ -28,7 +29,9 @@ See [docs/architecture.md](docs/architecture.md) for layer contracts and process
 - Derives price per square foot, property age, sale year, and sale month
 - Produces Gold sales volume, median/average price, price-per-square-foot, and size KPIs
 - Writes partitioned Parquet datasets for efficient analytical reads
-- Reports Bronze, Silver, and Gold row counts for every run
+- Quarantines invalid and superseded records with machine-readable reasons
+- Persists reconciled audit manifests and atomic input checkpoints
+- Processes only unseen Bronze snapshots on incremental runs and safely skips no-op reruns
 - Validates commits with Ruff, pytest, and local Spark integration tests
 
 ## Stack
@@ -50,6 +53,9 @@ housing-lakehouse --rows 100 --seed 42
 # Run Bronze, Silver, and Gold end to end
 housing-lakehouse --rows 100 --seed 42 --full
 
+# On later runs, process only the new snapshot and merge it into Silver
+housing-lakehouse --rows 100 --seed 43 --incremental
+
 pytest
 ```
 
@@ -62,6 +68,10 @@ Generated data is written under `data/` and ignored by Git.
 | Bronze | JSONL | Immutable source-shaped snapshots |
 | Silver | Parquet, partitioned by year/state | Clean property-level sales |
 | Gold | Parquet, partitioned by year/state | City-level annual market KPIs |
+| Rejected | Parquet | Invalid and superseded rows with rejection reasons |
+| Audit | JSON | Run identity, inputs, outputs, counts, mode, and reconciliation |
+
+See a real 25-row run in [docs/sample-output.md](docs/sample-output.md).
 
 ## Repository layout
 
@@ -70,10 +80,11 @@ src/housing_lakehouse/
   ingestion/             Reproducible source ingestion
   quality/               Source-boundary quality checks
   transformations/       Silver and Gold Spark logic
-  pipeline.py            Medallion orchestration and audit counts
+  pipeline.py            Full-refresh/incremental orchestration and audit counts
   cli.py                 Local command-line interface
 tests/                   Unit and Spark integration tests
 docs/                    Architecture documentation
+deployment/              Databricks job template
 .github/workflows/       Continuous integration
 ```
 
@@ -85,10 +96,11 @@ docs/                    Architecture documentation
 - [x] Implement typed Bronze-to-Silver transformations
 - [x] Build Gold market metrics
 - [x] Add an end-to-end local Spark pipeline
-- [ ] Persist detailed audit and rejected-record metrics
-- [ ] Add incremental processing and idempotency tests
-- [ ] Add sample output previews and an architecture image
-- [ ] Add Databricks job configuration and cloud deployment guidance
+- [x] Persist detailed audit and rejected-record metrics
+- [x] Add incremental processing and idempotency tests
+- [x] Add sample output previews and an architecture diagram
+- [x] Add a Databricks job template and cloud deployment guidance
+- [ ] Add object-storage adapters and table-format support for production-scale deployment
 
 ## Design principles
 
