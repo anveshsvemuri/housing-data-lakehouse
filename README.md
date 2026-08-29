@@ -32,11 +32,14 @@ See [docs/architecture.md](docs/architecture.md) for layer contracts and process
 - Quarantines invalid and superseded records with machine-readable reasons
 - Persists reconciled audit manifests and atomic input checkpoints
 - Processes only unseen Bronze snapshots on incremental runs and safely skips no-op reruns
-- Validates commits with Ruff, pytest, and local Spark integration tests
+- Defines encrypted, versioned AWS lakehouse storage with Terraform
+- Validates commits with Ruff, pytest, Spark integration tests, and Terraform
 
 ## Stack
 
-Python 3.11, PySpark 3.5, JSONL, Parquet, pytest, Ruff, and GitHub Actions. The design runs locally and remains portable to Databricks and cloud object storage.
+Python 3.11, PySpark 3.5, JSONL, Parquet, Terraform, AWS S3, pytest, Ruff, and
+GitHub Actions. The design runs locally and includes a safe infrastructure foundation for Databricks
+and cloud object storage.
 
 ## Quick start
 
@@ -85,6 +88,7 @@ src/housing_lakehouse/
 tests/                   Unit and Spark integration tests
 docs/                    Architecture documentation
 deployment/              Databricks job template
+infrastructure/terraform/ AWS lakehouse storage infrastructure
 .github/workflows/       Continuous integration
 ```
 
@@ -100,8 +104,13 @@ deployment/              Databricks job template
 - [x] Add incremental processing and idempotency tests
 - [x] Add sample output previews and an architecture diagram
 - [x] Add a Databricks job template and cloud deployment guidance
+- [x] Add validated Terraform for secure AWS object storage
 - [ ] Add object-storage adapters and table-format support for production-scale deployment
 
 ## Design principles
 
 The pipeline is deterministic, idempotent for a given input snapshot, configuration-driven, testable, and safe to demonstrate without credentials or committed datasets.
+
+Terraform is intentionally separate from application execution. It creates the storage and access
+policy, while [docs/terraform.md](docs/terraform.md) explains planning, applying, remote state, and
+the remaining adapter work required before the pipeline writes directly to S3.

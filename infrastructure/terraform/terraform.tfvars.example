@@ -1,0 +1,9 @@
+aws_region   = "us-east-1"
+environment  = "dev"
+project_name = "housing-data-lakehouse"
+force_destroy = false
+
+additional_tags = {
+  Owner      = "anveshsvemuri"
+  Repository = "housing-data-lakehouse"
+}
